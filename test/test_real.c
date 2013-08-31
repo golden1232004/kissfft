@@ -3,6 +3,7 @@
 #include <sys/times.h>
 #include <time.h>
 #include <unistd.h>
+#include <math.h>
 
 static double cputime(void)
 {
