@@ -31,6 +31,7 @@ int main(int argc,char ** argv)
     int numffts=1000,i;
     kiss_fft_cpx * buf;
     kiss_fft_cpx * bufout;
+    kiss_fft_cpx * invbufout;
     int real = 0;
 
     nfft[0] = 1024;// default
@@ -69,8 +70,19 @@ int main(int argc,char ** argv)
 
     buf=(kiss_fft_cpx*)KISS_FFT_MALLOC(nbytes);
     bufout=(kiss_fft_cpx*)KISS_FFT_MALLOC(nbytes);
+    invbufout = (kiss_fft_cpx*)KISS_FFT_MALLOC(nbytes);
     memset(buf,0,nbytes);
-
+    if (2 == ndims){
+        int i, j;
+        for (i = 0; i < nfft[0]; i++){
+            int row = i * nfft[1];
+            for (j = 0; j < nfft[1]; j++){
+                int idx = row + j;
+                buf[idx].r = idx;
+                buf[idx].i = 0;
+            }
+        }
+    }
     pstats_init();
 
     if (ndims==1) {
@@ -101,13 +113,28 @@ int main(int argc,char ** argv)
             free(st);
         }else{
             kiss_fftnd_cfg st= kiss_fftnd_alloc(nfft,ndims,isinverse ,0,0);
-            for (i=0;i<numffts;++i)
-                kiss_fftnd( st ,buf,bufout );
+            kiss_fftnd( st ,buf,bufout );
+            kiss_fftnd_cfg ist = kiss_fftnd_alloc(nfft, ndims, 1, 0, 0);
+            kiss_fftnd(ist, bufout, invbufout);
+            if (2 == ndims){
+                int i, j;
+                int val = nfft[0]*nfft[1];
+                for (i = 0; i < nfft[0]; i++){
+                    int row = i * nfft[1];
+                    for (j = 0; j < nfft[1]; j++){
+                        int idx = row + j;
+                        invbufout[idx].r /= val;
+                        invbufout[idx].i /= val;
+                    }
+                }
+            }
+
             free(st);
+            free(ist);
         }
     }
 
-    free(buf); free(bufout);
+    free(buf); free(bufout); free(invbufout);
 
     fprintf(stderr,"KISS\tnfft=");
     for (k=0;k<ndims;++k)
