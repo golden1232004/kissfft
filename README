@@ -35,7 +35,7 @@ Code definitions for 1d complex FFTs are in kiss_fft.c.
 
 You can do other cool stuff with the extras you'll find in tools/
 
-    * multi-dimensional FFTs (refer test/kissfft3d_example.c, the is data order and input parameter in nfft[32])
+    * multi-dimensional FFTs (refer test/kissfft3d_example.c, the keys are data order and input parameter in nfft[32])
     * real-optimized FFTs  (returns the positive half-spectrum: (nfft/2+1) complex frequency bins)
     * fast convolution FIR filtering (not available for fixed point)
     * spectrum image creation
