@@ -5,6 +5,47 @@
 #include "kiss_fft.h"
 #include "kiss_fftnd.h"
 
+static int gaussian_shaped_labels(kiss_fft_cpx *pData,
+                                  float *pTmp,
+                                  float sigma, 
+                                  int width, int height)
+{
+    if (0==pData)
+        return -1;
+    
+    float *ptr=0;
+
+    ptr = pTmp;
+    float sigma2 = sigma*sigma*2;
+    int cen_x = round(width/2.f)-1;
+    int cen_y = round(height/2.f)-1;
+    for (int h=0; h<height; h++)
+    {
+        int dy = h-cen_y;
+        for (int w=0; w<width; w++)
+        {
+            int dx = w-cen_x;                
+            *(ptr++) = (float)exp((-(dx*dx + dy*dy)/sigma2));
+        }
+    }
+    
+    // circshift the data    
+    ptr = pTmp;
+    for (int h=0; h<height; h++)
+    {
+        int idy = (h+cen_y)%height;
+        ptr = pTmp + idy*width;
+        for (int w=0; w<width; w++)  
+        {    
+            int idx = (w+cen_x)%(width);
+            pData[0].r = ptr[idx];
+            pData[0].i = 0;
+            pData++;
+        }
+    }    
+    return 0;
+}
+
 static
 int getdims(int * dims, char * arg)
 {
@@ -72,6 +113,9 @@ int main(int argc,char ** argv)
     bufout=(kiss_fft_cpx*)KISS_FFT_MALLOC(nbytes);
     invbufout = (kiss_fft_cpx*)KISS_FFT_MALLOC(nbytes);
     memset(buf,0,nbytes);
+    float* pTmp = (float*)malloc(nfft[0]*nfft[1]*sizeof(float));
+    float sigma = 1.5;
+    int st = gaussian_shaped_labels(buf, pTmp, sigma, nfft[1], nfft[0]);
     if (3 == ndims){
         int i, j, k;
         for (i = 0; i < nfft[0]; i++){
